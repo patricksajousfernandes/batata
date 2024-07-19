@@ -1,11 +1,8 @@
 import os
 import json
 from dotenv import load_dotenv
-from itertools import chain
 import boto3
 from langchain_community.retrievers import AmazonKnowledgeBasesRetriever
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.llms import Bedrock
 from langchain_community.chat_models import BedrockChat
 from langchain import hub
@@ -56,15 +53,11 @@ def call_titan(query, contexts):
     prompt = hub.pull("texte/awsprompt")
 
     # Create document combination and retrieval chains
-    combine_docs_chain = create_stuff_documents_chain(llm, prompt)
-    retrieval_chain = create_retrieval_chain(contexts, combine_docs_chain)
-
+    runnable = prompt | llm 
     # Invoke the chain with the query
-    response = chain.invoke({"input": query})
-
+    response = runnable.invoke({"input": query, "context": contexts } )
     # Extract and return the answer
-    answer = response['output']
-    return answer
+    return response
 
 def answer_query(user_input):
     """
@@ -76,11 +69,8 @@ def answer_query(user_input):
     # Call the appropriate LLM based on the environment variable
     if llm_model == "amazon-titan":
         answer = call_titan(user_input, user_contexts)
+        return answer
     else:
         return "Unsupported LLM model"
 
-    # Return the final response to the user
-    if "result" in answer:
-        return answer["result"]
-    else:
-        return "No response from model"
+    
