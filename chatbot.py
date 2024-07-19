@@ -6,6 +6,7 @@ from langchain_community.retrievers import AmazonKnowledgeBasesRetriever
 from langchain_community.llms import Bedrock
 from langchain_community.chat_models import BedrockChat
 from langchain import hub
+from langchain_aws import ChatBedrock
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,26 +39,30 @@ def call_titan(query, contexts):
     """
     # Model configuration
     model_kwargs = {
-        "maxTokenCount": 4096,
-        "stopSequences": [],
-        "temperature": 0,
-        "topP": 1,
+        "max_tokens": 3000,
+        "temperature": 0.1,
+        "top_p": 0.9
     }
 
     # Instantiate Bedrock LLM
-    llm = Bedrock(
-        client=bedrock, model_id="amazon.titan-text-express-v1", model_kwargs=model_kwargs
+    llm = ChatBedrock(
+        client=bedrock, model_id="anthropic.claude-3-5-sonnet-20240620-v1:0", model_kwargs=model_kwargs
     )
 
     # Retrieve prompt from Langchain Hub
     prompt = hub.pull("texte/awsprompt")
 
     # Create document combination and retrieval chains
-    runnable = prompt | llm 
+    runnable = prompt | llm
+
     # Invoke the chain with the query
-    response = runnable.invoke({"input": query, "context": contexts } )
-    # Extract and return the answer
-    return response
+    response = runnable.invoke({"input": query, "context": contexts})
+
+    # Assuming response is an object with a 'content' attribute or similar
+    if hasattr(response, 'content'):
+        return response.content
+    else:
+        return "Response format not recognized"
 
 def answer_query(user_input):
     """
@@ -73,4 +78,4 @@ def answer_query(user_input):
     else:
         return "Unsupported LLM model"
 
-    
+

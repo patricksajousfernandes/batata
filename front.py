@@ -2,6 +2,9 @@ import streamlit as st
 from chatbot import answer_query
 
 # Header/Title of streamlit app
+st.cache_data.clear()
+st.cache_resource.clear()
+
 st.title(f""":rainbow[RAG with Amazon Knowledge Bases and Langchain]""")
 
 # configuring values for session state
